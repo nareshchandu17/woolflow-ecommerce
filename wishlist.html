@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Wishlist - WoolFlow</title>
+    <meta name="description" content="View and manage your favorite wool sneakers. Save items for later and shop your wishlist.">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Core Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'warm-white': '#F8F6F0',
+                        'oat': '#E8E0D0',
+                        'mist-grey': '#C8C0B8',
+                        'charcoal': '#4A4A4A',
+                        'sage': '#A8B0A0',
+                        'stone': '#B8A898'
+                    },
+                    fontFamily: {
+                        'display': ['Inter', 'serif'],
+                        'body': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css?v=1.1.4">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #F8F6F0 0%, #E8E0D0 100%);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .wool-texture {
+            background-image: radial-gradient(circle at 1px 1px, rgba(168, 176, 160, 0.15) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        
+        .nav-glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(200, 192, 184, 0.3);
+        }
+        
+        .wishlist-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 18px;
+            height: 18px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 18px;
+            height: 18px;
+            background: #4A4A4A;
+            color: white;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="wool-texture min-h-screen">
+    <!-- Navigation -->
+    <nav class="nav-glass fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="text-2xl font-bold text-charcoal">WoolFlow</a>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="index.html" class="text-charcoal hover:text-sage transition-colors">Home</a>
+                    <a href="products.html" class="text-charcoal hover:text-sage transition-colors">Products</a>
+                    <a href="wishlist.html" class="text-charcoal hover:text-sage transition-colors font-medium">Wishlist</a>
+                    <a href="cart.html" class="text-charcoal hover:text-sage transition-colors">Cart</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="md:hidden p-2 text-charcoal hover:text-sage transition-colors" onclick="toggleMobileMenu()" aria-label="Open menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <button id="dark-mode-toggle" onclick="toggleDarkMode()" class="p-2 text-charcoal hover:text-sage transition-colors" title="Toggle Dark Mode">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                    <a href="cart.html" class="relative p-2 text-charcoal hover:text-sage transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+                        </svg>
+                        <span class="cart-count" id="cart-count">0</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="fixed inset-0 bg-charcoal/95 z-40 hidden opacity-0 transition-opacity duration-300">
+        <div class="flex flex-col items-center justify-center h-full gap-8">
+            <a href="index.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Home</a>
+            <a href="products.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Products</a>
+            <a href="wishlist.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Wishlist</a>
+            <a href="cart.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Cart</a>
+            <button onclick="toggleMobileMenu()" class="mt-8 text-warm-white/60 hover:text-warm-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div class="text-center mb-12 fade-in-up">
+            <h1 class="text-4xl md:text-5xl font-bold text-charcoal mb-4">My Wishlist</h1>
+            <p class="text-lg text-charcoal/70">Save your favorite items and shop them later</p>
+        </div>
+        
+        <div id="wishlist-items" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in-up">
+            <!-- Wishlist items will be rendered here -->
+        </div>
+    </main>
+
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <script src="main.js?v=1.1.4"></script>
+    <script>
+        // Initialize wishlist page
+        document.addEventListener('DOMContentLoaded', function() {
+            products = [...productData];
+            filteredProducts = [...products];
+            updateCartDisplay();
+            updateWishlistDisplay();
+            renderWishlistItems();
+            
+            // Initialize scroll animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            document.querySelectorAll('.fade-in-up').forEach(el => {
+                observer.observe(el);
+            });
+        });
+    </script>
+    
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed top-24 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+</body>
+</html>

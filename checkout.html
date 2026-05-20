@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - WoolFlow</title>
+    <meta name="description" content="Complete your purchase with secure checkout. Enter shipping details and payment information.">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'warm-white': '#F8F6F0',
+                        'oat': '#E8E0D0',
+                        'mist-grey': '#C8C0B8',
+                        'charcoal': '#4A4A4A',
+                        'sage': '#A8B0A0',
+                        'stone': '#B8A898'
+                    },
+                    fontFamily: {
+                        'display': ['Inter', 'serif'],
+                        'body': ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css?v=1.1.4">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #F8F6F0 0%, #E8E0D0 100%);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .wool-texture {
+            background-image: radial-gradient(circle at 1px 1px, rgba(168, 176, 160, 0.15) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        
+        .nav-glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(200, 192, 184, 0.3);
+        }
+        
+        .checkout-step {
+            transition: all 0.3s ease;
+        }
+        
+        .checkout-step.active {
+            border-color: #A8B0A0;
+            background: rgba(168, 176, 160, 0.1);
+        }
+        
+        .payment-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .payment-card:hover {
+            border-color: #A8B0A0;
+        }
+        
+        .payment-card.selected {
+            border-color: #A8B0A0;
+            background: rgba(168, 176, 160, 0.1);
+        }
+        
+        .fade-in-up {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        
+        .fade-in-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .input-field {
+            transition: all 0.2s ease;
+        }
+        
+        .input-field:focus {
+            border-color: #A8B0A0;
+            box-shadow: 0 0 0 3px rgba(168, 176, 160, 0.2);
+        }
+        
+        .promo-input:focus {
+            border-color: #A8B0A0;
+            outline: none;
+        }
+        
+        .secure-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+    </style>
+</head>
+<body class="wool-texture min-h-screen">
+    <!-- Navigation -->
+    <nav class="nav-glass fixed w-full top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="index.html" class="text-2xl font-bold text-charcoal">WoolFlow</a>
+                <div class="flex items-center space-x-6">
+                    <button class="lg:hidden p-2 text-charcoal hover:text-sage transition-colors" onclick="toggleMobileMenu()" aria-label="Open menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <button id="dark-mode-toggle" onclick="toggleDarkMode()" class="p-2 text-charcoal hover:text-sage transition-colors" title="Toggle Dark Mode">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                    <div class="flex items-center space-x-2 text-sm text-charcoal/70">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        <span>Secure Checkout</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="fixed inset-0 bg-charcoal/95 z-40 hidden opacity-0 transition-opacity duration-300">
+        <div class="flex flex-col items-center justify-center h-full gap-8">
+            <a href="index.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Home</a>
+            <a href="products.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Products</a>
+            <a href="wishlist.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Wishlist</a>
+            <a href="cart.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Cart</a>
+            <button onclick="toggleMobileMenu()" class="mt-8 text-warm-white/60 hover:text-warm-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <!-- Checkout Progress -->
+        <div class="mb-12 fade-in-up">
+            <div class="flex items-center justify-center space-x-4">
+                <div class="checkout-step active flex items-center space-x-2 px-4 py-2 rounded-full border-2 border-sage bg-sage/10">
+                    <span class="w-6 h-6 rounded-full bg-sage text-white flex items-center justify-center text-sm font-medium">1</span>
+                    <span class="text-sm font-medium text-charcoal">Shipping</span>
+                </div>
+                <div class="w-12 h-0.5 bg-mist-grey"></div>
+                <div class="checkout-step flex items-center space-x-2 px-4 py-2 rounded-full border-2 border-mist-grey">
+                    <span class="w-6 h-6 rounded-full bg-mist-grey text-white flex items-center justify-center text-sm font-medium">2</span>
+                    <span class="text-sm font-medium text-charcoal/70">Payment</span>
+                </div>
+                <div class="w-12 h-0.5 bg-mist-grey"></div>
+                <div class="checkout-step flex items-center space-x-2 px-4 py-2 rounded-full border-2 border-mist-grey">
+                    <span class="w-6 h-6 rounded-full bg-mist-grey text-white flex items-center justify-center text-sm font-medium">3</span>
+                    <span class="text-sm font-medium text-charcoal/70">Review</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Left Column - Forms -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Shipping Address -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg fade-in-up" id="shipping-section">
+                    <h2 class="text-xl font-semibold text-charcoal mb-6">Shipping Address</h2>
+                    <form id="shipping-form" class="space-y-4">
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-charcoal mb-2">First Name</label>
+                                <input type="text" id="firstName" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="John" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-charcoal mb-2">Last Name</label>
+                                <input type="text" id="lastName" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="Doe" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-charcoal mb-2">Email Address</label>
+                            <input type="email" id="email" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="john.doe@example.com" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-charcoal mb-2">Phone Number</label>
+                            <input type="tel" id="phone" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="+1 (555) 123-4567" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-charcoal mb-2">Street Address</label>
+                            <input type="text" id="address" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="123 Main Street" required>
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-charcoal mb-2">City</label>
+                                <input type="text" id="city" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="New York" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-charcoal mb-2">State</label>
+                                <select id="state" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" required>
+                                    <option value="">Select State</option>
+                                    <option value="CA">California</option>
+                                    <option value="NY">New York</option>
+                                    <option value="TX">Texas</option>
+                                    <option value="FL">Florida</option>
+                                    <option value="WA">Washington</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-charcoal mb-2">ZIP Code</label>
+                                <input type="text" id="zip" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="10001" required>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="bg-white rounded-2xl p-6 shadow-lg fade-in-up" id="payment-section">
+                    <h2 class="text-xl font-semibold text-charcoal mb-6">Payment Method</h2>
+                    
+                    <!-- Payment Cards -->
+                    <div class="grid md:grid-cols-3 gap-4 mb-6">
+                        <div class="payment-card selected border-2 border-sage rounded-xl p-4 text-center" onclick="selectPayment('card')">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-sage" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                            </svg>
+                            <p class="text-sm font-medium text-charcoal">Credit Card</p>
+                        </div>
+                        <div class="payment-card border-2 border-mist-grey rounded-xl p-4 text-center" onclick="selectPayment('paypal')">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-charcoal" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.59 3.025-2.566 6.082-8.558 6.082H9.63l-1.496 9.478h2.79c.457 0 .85-.335.922-.788l.04-.19.73-4.627.047-.255a.933.933 0 0 1 .922-.788h.58c3.76 0 6.704-1.528 7.565-5.946.274-1.398.166-2.568-.427-3.467l-.01-.01z"/>
+                            </svg>
+                            <p class="text-sm font-medium text-charcoal">PayPal</p>
+                        </div>
+                        <div class="payment-card border-2 border-mist-grey rounded-xl p-4 text-center" onclick="selectPayment('apple')">
+                            <svg class="w-8 h-8 mx-auto mb-2 text-charcoal" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4-2.87-2.98-2.45-7.52 1.48-7.7 1.14.06 1.91.62 2.56.62.66 0 1.9-.62 3.08-.62 1.34.02 2.5.72 3.18 1.8-2.87 1.41-2.39 5.02.08 6.02zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                            </svg>
+                            <p class="text-sm font-medium text-charcoal">Apple Pay</p>
+                        </div>
+                    </div>
+
+                    <!-- Credit Card Form -->
+                    <form id="payment-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-charcoal mb-2">Card Number</label>
+                            <input type="text" id="cardNumber" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="1234 5678 9012 3456" maxlength="19">
+                        </div>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-charcoal mb-2">Expiry Date</label>
+                                <input type="text" id="expiry" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="MM/YY" maxlength="5">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-charcoal mb-2">CVV</label>
+                                <input type="text" id="cvv" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="123" maxlength="4">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-charcoal mb-2">Name on Card</label>
+                            <input type="text" id="cardName" class="input-field w-full px-4 py-3 border border-mist-grey rounded-xl focus:outline-none" placeholder="John Doe">
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column - Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-2xl p-6 shadow-lg sticky top-24 fade-in-up">
+                    <h2 class="text-xl font-semibold text-charcoal mb-6">Order Summary</h2>
+                    
+                    <!-- Cart Items Preview -->
+                    <div id="checkout-cart-items" class="space-y-3 mb-6 max-h-48 overflow-y-auto">
+                        <!-- Cart items will be rendered here -->
+                    </div>
+                    
+                    <!-- Promo Code -->
+                    <div class="border-t border-mist-grey/30 pt-4 mb-6">
+                        <label class="block text-sm font-medium text-charcoal mb-2">Promo Code</label>
+                        <div class="flex space-x-2">
+                            <input type="text" id="promoCode" class="promo-input flex-1 px-4 py-2 border border-mist-grey rounded-xl text-sm" placeholder="Enter code">
+                            <button onclick="applyPromoCode()" class="px-4 py-2 bg-charcoal text-white rounded-xl text-sm font-medium hover:bg-charcoal/90 transition-all">
+                                Apply
+                            </button>
+                        </div>
+                        <p id="promo-message" class="text-sm mt-2 hidden"></p>
+                    </div>
+                    
+                    <!-- Order Totals -->
+                    <div class="border-t border-mist-grey/30 pt-4 space-y-2">
+                        <div class="flex justify-between text-charcoal/70">
+                            <span>Subtotal</span>
+                            <span id="subtotal">$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-charcoal/70">
+                            <span>Shipping</span>
+                            <span id="shipping">Free</span>
+                        </div>
+                        <div id="discount-row" class="flex justify-between text-green-600 hidden">
+                            <span>Discount</span>
+                            <span id="discount">-$0.00</span>
+                        </div>
+                        <div class="flex justify-between text-charcoal/70">
+                            <span>Tax (8%)</span>
+                            <span id="tax">$0.00</span>
+                        </div>
+                        <div class="border-t border-mist-grey/30 pt-3 mt-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg font-semibold text-charcoal">Total</span>
+                                <span id="total" class="text-2xl font-bold text-charcoal">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Place Order Button -->
+                    <button onclick="placeOrder()" class="w-full mt-6 py-4 bg-sage text-white rounded-xl font-semibold hover:bg-sage/90 transition-all transform hover:scale-[1.02] shadow-lg">
+                        Place Order
+                    </button>
+                    
+                    <!-- Security Badge -->
+                    <div class="flex items-center justify-center space-x-2 mt-4 text-sm text-charcoal/60">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                        <span>Secure SSL Checkout</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Order Success Modal -->
+    <div id="success-modal" class="fixed inset-0 bg-black/50 opacity-0 invisible transition-all duration-300 z-50 flex items-center justify-center p-6">
+        <div class="bg-white rounded-2xl max-w-md w-full p-8 text-center transform scale-95 transition-transform">
+            <div class="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-charcoal mb-2">Order Placed!</h2>
+            <p class="text-charcoal/70 mb-6">Thank you for your purchase. Your order has been confirmed and will be shipped soon.</p>
+            <div class="bg-mist-grey/20 rounded-xl p-4 mb-6">
+                <p class="text-sm text-charcoal/60 mb-1">Order Number</p>
+                <p class="text-lg font-bold text-charcoal" id="order-number">#WF-2026-0001</p>
+            </div>
+            <div class="space-y-2">
+                <a href="index.html" class="block w-full py-3 bg-sage text-white rounded-xl font-medium hover:bg-sage/90 transition-all">
+                    Continue Shopping
+                </a>
+                <button onclick="window.print()" class="block w-full py-3 border border-charcoal text-charcoal rounded-xl font-medium hover:bg-charcoal/5 transition-all">
+                    Print Receipt
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="main.js?v=1.1.4"></script>
+    <script>
+        let promoDiscount = 0;
+        
+        // Initialize checkout page
+        document.addEventListener('DOMContentLoaded', function() {
+            products = [...productData];
+            renderCheckoutCart();
+            calculateTotals();
+            
+            // Initialize scroll animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+            
+            document.querySelectorAll('.fade-in-up').forEach(el => {
+                observer.observe(el);
+            });
+        });
+        
+        function renderCheckoutCart() {
+            const container = document.getElementById('checkout-cart-items');
+            if (!container) return;
+            
+            if (cart.length === 0) {
+                container.innerHTML = '<p class="text-charcoal/60 text-center py-4">Your cart is empty</p>';
+                return;
+            }
+            
+            container.innerHTML = cart.map(item => `
+                <div class="flex items-center space-x-3">
+                    <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded-lg">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-charcoal truncate">${item.name}</p>
+                        <p class="text-xs text-charcoal/60">Qty: ${item.quantity}</p>
+                    </div>
+                    <span class="text-sm font-medium text-charcoal">$${(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+            `).join('');
+        }
+        
+        function calculateTotals() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const tax = subtotal * 0.08;
+            const total = subtotal + tax - promoDiscount;
+            
+            document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+            document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
+            document.getElementById('total').textContent = `$${total.toFixed(2)}`;
+            
+            if (promoDiscount > 0) {
+                document.getElementById('discount').textContent = `-$${promoDiscount.toFixed(2)}`;
+                document.getElementById('discount-row').classList.remove('hidden');
+            }
+        }
+        
+        function applyPromoCode() {
+            const code = document.getElementById('promoCode').value.toUpperCase();
+            const message = document.getElementById('promo-message');
+            
+            const promoCodes = {
+                'WOOL20': 20,
+                'SAGE15': 15,
+                'FIRST10': 10,
+                'FREESHIP': 0
+            };
+            
+            if (promoCodes[code] !== undefined) {
+                const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+                if (code === 'FREESHIP') {
+                    document.getElementById('shipping').textContent = 'Free';
+                    message.textContent = 'Free shipping applied!';
+                } else {
+                    promoDiscount = (subtotal * promoCodes[code]) / 100;
+                    message.textContent = `${promoCodes[code]}% discount applied!`;
+                }
+                message.className = 'text-sm mt-2 text-green-600';
+                message.classList.remove('hidden');
+                calculateTotals();
+            } else {
+                message.textContent = 'Invalid promo code';
+                message.className = 'text-sm mt-2 text-red-500';
+                message.classList.remove('hidden');
+            }
+        }
+        
+        function selectPayment(method) {
+            document.querySelectorAll('.payment-card').forEach(card => {
+                card.classList.remove('selected');
+                card.classList.remove('border-sage');
+                card.classList.add('border-mist-grey');
+            });
+            event.currentTarget.classList.add('selected');
+            event.currentTarget.classList.add('border-sage');
+            event.currentTarget.classList.remove('border-mist-grey');
+        }
+        
+        function placeOrder() {
+            // Validate form
+            const requiredFields = ['firstName', 'lastName', 'email', 'address', 'city', 'state', 'zip'];
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                const input = document.getElementById(field);
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('border-red-500');
+                } else {
+                    input.classList.remove('border-red-500');
+                }
+            });
+            
+            if (!isValid) {
+                showNotification('Please fill in all required fields', 'error');
+                return;
+            }
+            
+            if (cart.length === 0) {
+                showNotification('Your cart is empty', 'error');
+                return;
+            }
+            
+            // Generate order number
+            const orderNumber = '#WF-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('order-number').textContent = orderNumber;
+            
+            // Show success modal
+            const modal = document.getElementById('success-modal');
+            modal.classList.remove('opacity-0', 'invisible');
+            modal.querySelector('div').classList.remove('scale-95');
+            
+            // Clear cart
+            cart = [];
+            localStorage.setItem('woolflow-cart', JSON.stringify(cart));
+        }
+        
+        // Card number formatting
+        document.getElementById('cardNumber')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '').replace(/[^0-9]/gi, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || '';
+            e.target.value = formattedValue;
+        });
+        
+        // Expiry date formatting
+        document.getElementById('expiry')?.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '/' + value.substring(2, 4);
+            }
+            e.target.value = value;
+        });
+    </script>
+    
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed top-24 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+</body>
+</html>

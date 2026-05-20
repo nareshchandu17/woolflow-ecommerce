@@ -1,7 +1,7 @@
 // WoolFlow Service Worker - Production Grade
 // Advanced caching strategies for optimal performance
 
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.1.4';
 const CACHE_NAMES = {
     STATIC: `woolflow-static-${CACHE_VERSION}`,
     DYNAMIC: `woolflow-dynamic-${CACHE_VERSION}`,
@@ -23,6 +23,9 @@ const PRECACHE_RESOURCES = [
     '/index.html',
     '/products.html',
     '/cart.html',
+    '/checkout.html',
+    '/wishlist.html',
+    '/styles.css',
     '/main.js',
     '/resources/hero-wool.jpg',
     '/resources/product-urban-oat.jpg',
@@ -60,8 +63,9 @@ class CacheManager {
         const cache = await this.openCache(cacheName);
         await cache.put(request, response.clone());
         
-        // Set expiration
-        this.cacheExpiration.set(request.url, Date.now() + CACHE_EXPIRATION[cacheName.toUpperCase()]);
+        // Set expiration by cache bucket instead of the generated cache name.
+        const cacheType = Object.entries(CACHE_NAMES).find(([, name]) => name === cacheName)?.[0] || 'DYNAMIC';
+        this.cacheExpiration.set(request.url, Date.now() + CACHE_EXPIRATION[cacheType]);
     }
     
     async getCachedResource(request, cacheName) {
@@ -173,7 +177,12 @@ function determineCachingStrategy(request) {
         return 'network-first';
     }
     
-    // Static resources - Cache first
+    // CSS and JavaScript should stay fresh during design/UI iterations.
+    if (/\.(js|css)$/.test(url.pathname)) {
+        return 'network-first';
+    }
+
+    // Static media/font resources - Cache first
     if (STATIC_RESOURCES.some(regex => regex.test(url.pathname))) {
         if (/\.(jpg|jpeg|png|gif|svg|webp)$/.test(url.pathname)) {
             return 'cache-first-images';

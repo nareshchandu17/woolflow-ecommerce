@@ -33,6 +33,7 @@
             }
         }
     </script>
+    <link rel="stylesheet" href="styles.css?v=1.1.4">
     
     <style>
         body {
@@ -94,16 +95,47 @@
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <button id="cart-toggle" class="relative p-2 text-charcoal hover:text-sage transition-colors">
+                    <button class="lg:hidden p-2 text-charcoal hover:text-sage transition-colors" onclick="toggleMobileMenu()" aria-label="Open menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                        </svg>
+                    </button>
+                    <a href="wishlist.html" class="relative p-2 text-charcoal hover:text-sage transition-colors" title="Wishlist">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                        </svg>
+                        <span id="wishlist-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
+                    </a>
+                    <button id="dark-mode-toggle" onclick="toggleDarkMode()" class="p-2 text-charcoal hover:text-sage transition-colors" title="Toggle Dark Mode">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                    </button>
+                    <a href="cart.html" class="relative p-2 text-sage transition-colors">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 6M7 13l-1.5 6m0 0h9m-9 0V19a2 2 0 002 2h7a2 2 0 002-2v-4"></path>
                         </svg>
                         <span id="cart-count" class="absolute -top-1 -right-1 bg-sage text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
     </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-menu" class="fixed inset-0 bg-charcoal/95 z-40 hidden opacity-0 transition-opacity duration-300">
+        <div class="flex flex-col items-center justify-center h-full gap-8">
+            <a href="index.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Home</a>
+            <a href="products.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Products</a>
+            <a href="wishlist.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Wishlist</a>
+            <a href="cart.html" class="text-2xl text-warm-white hover:text-sage transition-colors">Cart</a>
+            <button onclick="toggleMobileMenu()" class="mt-8 text-warm-white/60 hover:text-warm-white">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </div>
 
     <!-- Header -->
     <section class="pt-32 pb-12">
@@ -335,6 +367,9 @@
         </div>
     </footer>
 
-    <script src="main.js"></script>
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed top-24 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script src="main.js?v=1.1.4"></script>
 </body>
 </html>
