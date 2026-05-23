@@ -1644,6 +1644,7 @@ function renderCartItems() {
                 <h4 class="font-semibold text-charcoal">${item.name}</h4>
                 ${item.size ? `<p class="text-sm text-charcoal/70">Size: ${item.size}</p>` : ''}
                 <p class="text-lg font-bold text-charcoal mt-1">$${item.price}</p>
+                <button onclick="saveForLater('${item.id}', ${item.size || 'null'})" class="mt-1 text-xs text-sage hover:underline transition-colors">Save for later</button>
             </div>
             <div class="flex items-center space-x-3">
                 <button onclick="updateCartQuantity('${item.id}', ${item.size || 'null'}, ${item.quantity - 1})" class="quantity-btn w-10 h-10 rounded-full border border-mist-grey flex items-center justify-center text-charcoal">
@@ -4757,3 +4758,412 @@ function initializeBackToTop() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 }
+
+
+// ============================================
+// FEATURE 1: SAVE FOR LATER
+// ============================================
+let savedForLater = JSON.parse(localStorage.getItem('woolflow-saved-later')) || [];
+
+function saveForLater(productId, size) {
+    const item = cart.find(i => i.id === productId && i.size === size);
+    if (!item) return;
+    cart = cart.filter(i => !(i.id === productId && i.size === size));
+    localStorage.setItem('woolflow-cart', JSON.stringify(cart));
+    const alreadySaved = savedForLater.find(i => i.id === productId && i.size === size);
+    if (!alreadySaved) {
+        savedForLater.push({ ...item, savedAt: Date.now() });
+        localStorage.setItem('woolflow-saved-later', JSON.stringify(savedForLater));
+    }
+    updateCartDisplay();
+    if (window.location.pathname.includes('cart.html')) {
+        renderCartItems();
+        updateOrderSummary();
+        renderSavedForLater();
+    }
+    showNotification('Saved for later!', 'success');
+}
+
+function moveToCart(productId, size) {
+    const item = savedForLater.find(i => i.id === productId && i.size === size);
+    if (!item) return;
+    savedForLater = savedForLater.filter(i => !(i.id === productId && i.size === size));
+    localStorage.setItem('woolflow-saved-later', JSON.stringify(savedForLater));
+    addToCart(item.id, item.name, item.price, item.image, item.size);
+    if (window.location.pathname.includes('cart.html')) {
+        renderCartItems();
+        updateOrderSummary();
+        renderSavedForLater();
+    }
+}
+
+function removeSavedItem(productId, size) {
+    savedForLater = savedForLater.filter(i => !(i.id === productId && i.size === size));
+    localStorage.setItem('woolflow-saved-later', JSON.stringify(savedForLater));
+    renderSavedForLater();
+    showNotification('Removed from saved items', 'success');
+}
+
+function renderSavedForLater() {
+    const container = document.getElementById('saved-for-later-section');
+    if (!container) return;
+    if (savedForLater.length === 0) { container.innerHTML = ''; return; }
+    const rows = savedForLater.map(item => {
+        const sizeStr = item.size ? `Size: ${item.size}` : '';
+        return `<div class="flex items-center space-x-4 p-4 border border-mist-grey/30 rounded-xl">
+            <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded-lg">
+            <div class="flex-1">
+                <h4 class="font-semibold text-charcoal">${item.name}</h4>
+                ${sizeStr ? `<p class="text-sm text-charcoal/60">${sizeStr}</p>` : ''}
+                <p class="text-charcoal font-bold mt-1">$${item.price}</p>
+            </div>
+            <div class="flex flex-col gap-2">
+                <button onclick="moveToCart('${item.id}', ${item.size || 'null'})"
+                    class="px-4 py-2 bg-sage text-white rounded-full text-sm font-medium hover:bg-sage/90 transition-colors">
+                    Move to Cart
+                </button>
+                <button onclick="removeSavedItem('${item.id}', ${item.size || 'null'})"
+                    class="px-4 py-2 border border-mist-grey text-charcoal/60 rounded-full text-sm hover:border-red-400 hover:text-red-400 transition-colors">
+                    Remove
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+    container.innerHTML = `<div class="bg-warm-white/80 backdrop-blur-sm rounded-2xl p-6 mt-6">
+        <h2 class="text-xl font-display font-bold text-charcoal mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-sage" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
+            </svg>
+            Saved for Later (${savedForLater.length})
+        </h2>
+        <div class="space-y-4">${rows}</div>
+    </div>`;
+}
+
+// ============================================
+// FEATURE 2: USER REVIEW SUBMISSION
+// ============================================
+let userReviews = JSON.parse(localStorage.getItem('woolflow-user-reviews')) || {};
+
+function openReviewForm(productId) {
+    const existing = document.getElementById('review-form-container');
+    if (existing) { existing.remove(); return; }
+    const container = document.createElement('div');
+    container.id = 'review-form-container';
+    container.className = 'mt-6 p-5 bg-oat/40 rounded-2xl border border-mist-grey/30';
+    container.innerHTML = `
+        <h4 class="font-semibold text-charcoal mb-4">Write a Review</h4>
+        <div class="mb-4">
+            <p class="text-sm text-charcoal/70 mb-2">Your Rating</p>
+            <div class="flex gap-1" id="star-picker">
+                ${[1,2,3,4,5].map(n => `<button onclick="setReviewRating(${n})" data-star="${n}" class="star-pick text-2xl text-mist-grey hover:text-yellow-400 transition-colors">&#9733;</button>`).join('')}
+            </div>
+            <input type="hidden" id="review-rating-value" value="0">
+        </div>
+        <div class="mb-4">
+            <input type="text" id="review-author" placeholder="Your name"
+                class="w-full px-4 py-2 border border-mist-grey rounded-xl text-sm focus:outline-none focus:border-sage">
+        </div>
+        <div class="mb-4">
+            <textarea id="review-text" rows="3" placeholder="Share your experience..."
+                class="w-full px-4 py-2 border border-mist-grey rounded-xl text-sm focus:outline-none focus:border-sage resize-none"></textarea>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="submitReview('${productId}')"
+                class="px-5 py-2 bg-charcoal text-white rounded-full text-sm font-medium hover:bg-charcoal/90 transition-colors">
+                Submit Review
+            </button>
+            <button onclick="document.getElementById('review-form-container').remove()"
+                class="px-5 py-2 border border-mist-grey text-charcoal/60 rounded-full text-sm hover:border-charcoal transition-colors">
+                Cancel
+            </button>
+        </div>`;
+    const reviewsSection = document.getElementById('modal-reviews');
+    if (reviewsSection) reviewsSection.insertAdjacentElement('beforebegin', container);
+}
+
+function setReviewRating(value) {
+    document.getElementById('review-rating-value').value = value;
+    document.querySelectorAll('.star-pick').forEach(btn => {
+        const star = parseInt(btn.dataset.star);
+        btn.style.color = star <= value ? '#FBBF24' : '#C8C0B8';
+    });
+}
+
+function submitReview(productId) {
+    const rating = parseInt(document.getElementById('review-rating-value').value);
+    const author = document.getElementById('review-author').value.trim();
+    const text = document.getElementById('review-text').value.trim();
+    if (rating === 0) { showNotification('Please select a star rating', 'error'); return; }
+    if (!author) { showNotification('Please enter your name', 'error'); return; }
+    if (!text) { showNotification('Please write a review', 'error'); return; }
+    const review = { name: author, rating, text, date: new Date().toISOString().split('T')[0], userSubmitted: true };
+    if (!userReviews[productId]) userReviews[productId] = [];
+    userReviews[productId].unshift(review);
+    localStorage.setItem('woolflow-user-reviews', JSON.stringify(userReviews));
+    const product = products.find(p => p.id === productId);
+    if (product) {
+        if (!product.reviews) product.reviews = [];
+        product.reviews.unshift(review);
+        product.reviewCount = (product.reviewCount || 0) + 1;
+        const allRatings = product.reviews.map(r => r.rating);
+        product.rating = Math.round((allRatings.reduce((a, b) => a + b, 0) / allRatings.length) * 10) / 10;
+    }
+    document.getElementById('review-form-container').remove();
+    if (currentProduct) injectWriteReviewButton(currentProduct);
+    showNotification('Review submitted — thank you!', 'success');
+}
+
+function injectWriteReviewButton(product) {
+    const reviewsSection = document.getElementById('modal-reviews');
+    if (!reviewsSection) return;
+    const existing = document.getElementById('write-review-btn');
+    if (existing) existing.remove();
+    // Merge and re-render reviews
+    const stored = (userReviews[product.id] || []);
+    const base = (product.reviews || []).filter(r => !r.userSubmitted);
+    const merged = [...stored, ...base];
+    const displayProduct = { ...product, reviews: merged };
+    renderModalReviews(displayProduct);
+    // Add button
+    const btn = document.createElement('button');
+    btn.id = 'write-review-btn';
+    btn.className = 'mt-4 px-5 py-2 border-2 border-sage text-sage rounded-full text-sm font-medium hover:bg-sage hover:text-white transition-all';
+    btn.textContent = '+ Write a Review';
+    btn.onclick = () => openReviewForm(product.id);
+    reviewsSection.appendChild(btn);
+}
+
+// ============================================
+// FEATURE 3: CART ABANDONMENT RECOVERY
+// ============================================
+function initCartAbandonmentRecovery() {
+    const lastVisit = parseInt(localStorage.getItem('woolflow-last-visit') || '0');
+    const now = Date.now();
+    localStorage.setItem('woolflow-last-visit', now.toString());
+    const MIN_GAP = 30 * 60 * 1000;
+    if (lastVisit > 0 && (now - lastVisit) > MIN_GAP && cart.length > 0) {
+        setTimeout(showAbandonmentNudge, 1500);
+    }
+}
+
+function showAbandonmentNudge() {
+    if (document.getElementById('abandonment-nudge')) return;
+    const totalItems = cart.reduce((s, i) => s + i.quantity, 0);
+    const totalValue = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+    const nudge = document.createElement('div');
+    nudge.id = 'abandonment-nudge';
+    nudge.className = 'fixed bottom-6 left-6 z-50 max-w-sm bg-white rounded-2xl shadow-2xl border border-mist-grey/30 p-5 transform translate-y-4 opacity-0 transition-all duration-500';
+    nudge.innerHTML = `
+        <button onclick="document.getElementById('abandonment-nudge').remove()"
+            class="absolute top-3 right-3 text-charcoal/40 hover:text-charcoal transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+        <div class="flex items-start gap-3">
+            <img src="${cart[0].image}" alt="" class="w-14 h-14 rounded-xl object-cover flex-shrink-0">
+            <div>
+                <p class="text-xs text-sage font-semibold uppercase tracking-wide mb-1">Welcome back!</p>
+                <p class="text-sm font-semibold text-charcoal">You left ${totalItems} item${totalItems > 1 ? 's' : ''} behind</p>
+                <p class="text-xs text-charcoal/60 mt-0.5">${cart[0].name}${totalItems > 1 ? ' + ' + (totalItems - 1) + ' more' : ''} &middot; $${totalValue.toFixed(2)}</p>
+                <div class="flex gap-2 mt-3">
+                    <a href="cart.html" class="px-4 py-1.5 bg-charcoal text-white rounded-full text-xs font-medium hover:bg-charcoal/90 transition-colors">View Cart</a>
+                    <button onclick="document.getElementById('abandonment-nudge').remove()"
+                        class="px-4 py-1.5 border border-mist-grey text-charcoal/60 rounded-full text-xs hover:border-charcoal transition-colors">Dismiss</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(nudge);
+    requestAnimationFrame(() => {
+        nudge.classList.remove('translate-y-4', 'opacity-0');
+        nudge.classList.add('translate-y-0', 'opacity-100');
+    });
+    setTimeout(() => {
+        if (nudge.parentNode) {
+            nudge.classList.add('translate-y-4', 'opacity-0');
+            setTimeout(() => nudge.remove(), 500);
+        }
+    }, 12000);
+}
+
+// ============================================
+// FEATURE 4: PRODUCT BUNDLE SUGGESTIONS
+// ============================================
+const BUNDLE_PAIRS = {
+    'urban-runner': 'metro-mist', 'city-sage': 'trail-sage', 'metro-mist': 'urban-runner',
+    'street-charcoal': 'daily-charcoal', 'commuter-oat': 'lounge-oat', 'trail-sage': 'city-sage',
+    'sport-mist': 'flex-sage', 'hike-charcoal': 'street-charcoal', 'active-oat': 'commuter-oat',
+    'flex-sage': 'sport-mist', 'weekend-mist': 'metro-mist', 'lounge-oat': 'easy-oat',
+    'daily-charcoal': 'street-charcoal', 'comfort-sage': 'flex-sage', 'easy-oat': 'lounge-oat',
+    'urban-mist-plus': 'metro-mist', 'metro-charcoal-plus': 'daily-charcoal', 'active-sage-plus': 'trail-sage'
+};
+const BUNDLE_DISCOUNT_PCT = 10;
+
+function renderBundleSuggestion(product) {
+    const pairedId = BUNDLE_PAIRS[product.id];
+    if (!pairedId) return;
+    const paired = products.find(p => p.id === pairedId);
+    if (!paired) return;
+    let container = document.getElementById('bundle-suggestion');
+    if (!container) return;
+    const combinedOriginal = product.price + paired.price;
+    const discount = Math.round(combinedOriginal * BUNDLE_DISCOUNT_PCT / 100);
+    const bundlePrice = combinedOriginal - discount;
+    container.innerHTML = `
+        <div class="mt-6 p-4 bg-gradient-to-r from-sage/10 to-oat/40 rounded-2xl border border-sage/20">
+            <div class="flex items-center gap-2 mb-3">
+                <svg class="w-4 h-4 text-sage" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/>
+                </svg>
+                <span class="text-sm font-semibold text-charcoal">Complete the Look</span>
+                <span class="ml-auto text-xs bg-sage text-white px-2 py-0.5 rounded-full font-medium">${BUNDLE_DISCOUNT_PCT}% off bundle</span>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="flex -space-x-3">
+                    <img src="${product.image}" alt="${product.name}" class="w-12 h-12 rounded-xl object-cover border-2 border-white">
+                    <img src="${paired.image}" alt="${paired.name}" class="w-12 h-12 rounded-xl object-cover border-2 border-white">
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-charcoal truncate">${product.name} + ${paired.name}</p>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span class="text-sm font-bold text-charcoal">$${bundlePrice}</span>
+                        <span class="text-xs text-charcoal/40 line-through">$${combinedOriginal}</span>
+                        <span class="text-xs text-green-600 font-medium">Save $${discount}</span>
+                    </div>
+                </div>
+                <button onclick="addBundleToCart('${product.id}', '${paired.id}')"
+                    class="flex-shrink-0 px-3 py-2 bg-sage text-white rounded-xl text-xs font-medium hover:bg-sage/90 transition-colors">
+                    Add Both
+                </button>
+            </div>
+        </div>`;
+}
+
+function addBundleToCart(productId1, productId2) {
+    const p1 = products.find(p => p.id === productId1);
+    const p2 = products.find(p => p.id === productId2);
+    if (!p1 || !p2) return;
+    const d1 = Math.round(p1.price * (1 - BUNDLE_DISCOUNT_PCT / 100));
+    const d2 = Math.round(p2.price * (1 - BUNDLE_DISCOUNT_PCT / 100));
+    addToCart(p1.id, p1.name + ' (Bundle)', d1, p1.image, null);
+    addToCart(p2.id, p2.name + ' (Bundle)', d2, p2.image, null);
+    showNotification('Bundle added! You saved $' + Math.round((p1.price + p2.price) * BUNDLE_DISCOUNT_PCT / 100), 'success');
+    closeProductModal();
+}
+
+// ============================================
+// FEATURE 5: RESTOCK ALERTS
+// ============================================
+let restockAlerts = JSON.parse(localStorage.getItem('woolflow-restock-alerts')) || [];
+
+function subscribeRestockAlert(productId, color, size) {
+    const key = productId + '|' + color + '|' + size;
+    if (restockAlerts.some(a => a.key === key)) {
+        showNotification('Already subscribed for this item!', 'info');
+        return;
+    }
+    const product = products.find(p => p.id === productId);
+    restockAlerts.push({ key, productId, color, size, productName: product ? product.name : productId, subscribedAt: Date.now() });
+    localStorage.setItem('woolflow-restock-alerts', JSON.stringify(restockAlerts));
+    const btn = document.getElementById('restock-btn-' + productId + '-' + color + '-' + size);
+    if (btn) { btn.textContent = '\u2713 Notify Me'; btn.disabled = true; btn.classList.add('opacity-60', 'cursor-not-allowed'); }
+    showNotification("We'll notify you when Size " + size + " in " + color + " is back!", 'success');
+    // Simulate restock after 20-40 seconds (demo)
+    const delay = 20000 + Math.random() * 20000;
+    setTimeout(() => triggerRestockNotification(key), delay);
+}
+
+function triggerRestockNotification(key) {
+    const alert = restockAlerts.find(a => a.key === key);
+    if (!alert) return;
+    restockAlerts = restockAlerts.filter(a => a.key !== key);
+    localStorage.setItem('woolflow-restock-alerts', JSON.stringify(restockAlerts));
+    const notif = document.createElement('div');
+    notif.className = 'fixed bottom-6 right-6 z-50 max-w-sm bg-white rounded-2xl shadow-2xl border border-sage/30 p-5 transform translate-y-4 opacity-0 transition-all duration-500';
+    notif.innerHTML = `
+        <div class="flex items-start gap-3">
+            <div class="w-10 h-10 bg-sage/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-sage" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+            </div>
+            <div class="flex-1">
+                <p class="text-sm font-semibold text-charcoal">Back in Stock!</p>
+                <p class="text-xs text-charcoal/60 mt-0.5">${alert.productName} &middot; Size ${alert.size} in ${alert.color} is available again</p>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="openProductModal('${alert.productId}'); this.closest('.fixed').remove();"
+                        class="px-4 py-1.5 bg-sage text-white rounded-full text-xs font-medium hover:bg-sage/90 transition-colors">Shop Now</button>
+                    <button onclick="this.closest('.fixed').remove()"
+                        class="px-4 py-1.5 border border-mist-grey text-charcoal/60 rounded-full text-xs hover:border-charcoal transition-colors">Dismiss</button>
+                </div>
+            </div>
+        </div>`;
+    document.body.appendChild(notif);
+    requestAnimationFrame(() => { notif.classList.remove('translate-y-4', 'opacity-0'); notif.classList.add('translate-y-0', 'opacity-100'); });
+}
+
+// ============================================
+// WIRE UP: Patch openProductModal to inject
+// bundle suggestion + restock alert UI + reviews
+// ============================================
+const _origOpenProductModal = openProductModal;
+function openProductModal(productId) {
+    _origOpenProductModal(productId);
+    const modal = document.getElementById('product-modal');
+    if (!modal) return;
+    // Bundle suggestion placeholder
+    if (!document.getElementById('bundle-suggestion')) {
+        const bundleEl = document.createElement('div');
+        bundleEl.id = 'bundle-suggestion';
+        const addToCartBtn = document.getElementById('modal-add-to-cart');
+        if (addToCartBtn && addToCartBtn.parentNode) {
+            addToCartBtn.parentNode.insertBefore(bundleEl, addToCartBtn.nextSibling);
+        }
+    }
+    const product = products.find(p => p.id === productId);
+    if (product) {
+        renderBundleSuggestion(product);
+        injectWriteReviewButton(product);
+        patchSizeGridWithRestockAlerts(productId);
+    }
+}
+
+function patchSizeGridWithRestockAlerts(productId) {
+    setTimeout(() => {
+        const product = products.find(p => p.id === productId);
+        if (!product || !product.stockBySize) return;
+        const color = currentProduct && currentProduct.selectedVariant ? currentProduct.selectedVariant.color : product.color;
+        const stockBySize = product.stockBySize[color] || {};
+        const sizeGrid = document.getElementById('modal-size-grid');
+        if (!sizeGrid) return;
+        const existing = document.getElementById('restock-area');
+        if (existing) existing.remove();
+        const outOfStockSizes = product.sizes.filter(s => (stockBySize[s] || 0) === 0);
+        if (outOfStockSizes.length === 0) return;
+        const restockArea = document.createElement('div');
+        restockArea.id = 'restock-area';
+        restockArea.className = 'mt-3';
+        const btns = outOfStockSizes.map(size => {
+            const btnId = 'restock-btn-' + productId + '-' + color + '-' + size;
+            const isSubscribed = restockAlerts.some(a => a.key === productId + '|' + color + '|' + size);
+            return `<button onclick="subscribeRestockAlert('${productId}', '${color}', ${size})"
+                id="${btnId}" ${isSubscribed ? 'disabled' : ''}
+                class="px-3 py-1.5 border border-dashed border-mist-grey text-charcoal/50 rounded-lg text-xs hover:border-sage hover:text-sage transition-colors ${isSubscribed ? 'opacity-60 cursor-not-allowed' : ''}">
+                ${isSubscribed ? '\u2713' : '\uD83D\uDD14'} Size ${size}
+            </button>`;
+        }).join('');
+        restockArea.innerHTML = '<p class="text-xs text-charcoal/50 mb-2">Out of stock in your size? Get notified:</p><div class="flex flex-wrap gap-2">' + btns + '</div>';
+        sizeGrid.parentNode.insertBefore(restockArea, sizeGrid.nextSibling);
+    }, 50);
+}
+
+// ============================================
+// INIT: Run on every page load
+// ============================================
+document.addEventListener('DOMContentLoaded', function() {
+    initCartAbandonmentRecovery();
+    if (window.location.pathname.includes('cart.html')) {
+        renderSavedForLater();
+    }
+});
