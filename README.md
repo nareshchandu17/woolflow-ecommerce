@@ -170,6 +170,27 @@ woolflow-ecommerce/
 
 ---
 
+## 🤖 Advanced Client-Side AI Engine
+
+WoolFlow features a sophisticated, zero-dependency **Client-Side AI Engine** (`ai-engine.js`) that runs complex heuristic modeling and predictive algorithms completely offline in the browser:
+
+1. **Personalized Recommendations Engine** – Similarity calculations based on category, pricing tier, and user clickstream history.
+2. **Smart Size Fit Advisor Chatbot** – Translates height, weight, and foot measurements into size recommendations with calculated confidence intervals.
+3. **Natural Language Search (NLP)** – Real-time regex intent engine that parses natural language queries (e.g., *"comfortable summer sliders under $130"*) to filter by style, category, color, season, and price range.
+4. **Review Sentiment Scorer** – Lexicon sentiment analyzer (-1 to +1) that parses customer comments, extracts common feedback tags, and summaries sizing or comfort anomalies with context emojis (😊/😐/🙂).
+5. **Visual Similarity Search** – Category silhouette and color-vector resemblance matcher that ranks alternative recommendations.
+6. **Inventory Scarcity Predictor** – Linear stock depletion monitoring that displays dynamic alert badges (*"Only X left!"*) when inventory thresholds are breached.
+7. **Outfit & Style Advisor** – Evaluates coordinates against an earth-tone color harmony matrix (Oat, Sage, Charcoal, Stone, Mist) to propose matching bundles.
+8. **Sustainability Score Calculator** – Real-time cradle-to-grave score sheet measuring material footprint, ethical production, and cost-per-wear metrics.
+9. **Customer Churn & Retention Modeler** – Risk-weighting engine tracking cart abandonment and customer sessions to automatically apply retention code incentives (`COMEBACK15`).
+10. **Dynamic Price Optimizer** – Adapts pricing dynamically based on local seasonal weather shifts and critical stock levels.
+
+### 📶 Progressive Web App (PWA) Integration
+* **Offline Caching:** Supported by a resilient service worker (`sw.js`) that caches styles, catalog scripts, and page assets for seamless offline operation.
+* **Responsive Layouts:** The floating support assistant chat bubble and custom AI panels adapt dynamically using responsive media queries for all devices.
+
+---
+
 ## 🛠️ Tech Stack Details
 
 ### Frontend

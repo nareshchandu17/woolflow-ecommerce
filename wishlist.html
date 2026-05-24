@@ -35,6 +35,7 @@
         }
     </script>
     <link rel="stylesheet" href="styles.css?v=1.1.4">
+    <link rel="manifest" href="manifest.json">
     
     <style>
         body {
@@ -162,30 +163,13 @@
     <!-- Notification Container -->
     <div id="notification-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
 
+    <script src="products-database.js"></script>
+    <script src="catalog-utils.js"></script>
+    <script src="ai-engine.js"></script>
+    <script src="ai-ui-components.js"></script>
+    <script src="ai-integration.js"></script>
+    <script src="app-bootstrap.js"></script>
     <script src="main.js?v=1.1.4"></script>
-    <script>
-        // Initialize wishlist page
-        document.addEventListener('DOMContentLoaded', function() {
-            products = [...productData];
-            filteredProducts = [...products];
-            updateCartDisplay();
-            updateWishlistDisplay();
-            renderWishlistItems();
-            
-            // Initialize scroll animations
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('visible');
-                    }
-                });
-            }, { threshold: 0.1 });
-            
-            document.querySelectorAll('.fade-in-up').forEach(el => {
-                observer.observe(el);
-            });
-        });
-    </script>
     
     <!-- Notification Container -->
     <div id="notification-container" class="fixed top-24 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>

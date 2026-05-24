@@ -1,10 +1,5 @@
 // AI Integration Module - Connects all AI features to the application
 
-// Global functions for AI feature interactions
-
-// ============================================
-// SIZE FIT ADVISOR
-// ============================================
 function openSizeFitAdvisor() {
     let widget = document.getElementById('size-fit-advisor');
     if (!widget) {
@@ -23,397 +18,288 @@ function closeSizeFitAdvisor() {
 function sendSizeFitMessage() {
     const input = document.getElementById('size-advisor-input');
     const message = input.value.trim();
-    if (message) {
-        sizeFitAdvisor.processInput(message);
-    }
+    if (message) sizeFitAdvisor.processInput(message);
 }
 
-// ============================================
-// SMART SEARCH
-// ============================================
 function selectSearchResult(productId) {
     const product = products.find(p => p.id === productId);
     if (product) {
         aiEngine.recordProductView(productId);
-        // Redirect to product page or show modal
         showProductDetail(productId);
-        document.getElementById('search-suggestions').classList.add('hidden');
+        const suggestions = document.getElementById('search-suggestions');
+        if (suggestions) suggestions.classList.add('hidden');
     }
 }
 
 function initializeSmartSearch() {
-    const searchInput = document.querySelector('[id="smart-search-input"]');
-    if (!searchInput) {
-        const container = smartSearch.initializeWidget(products);
-        const navContainer = document.querySelector('.nav-links') || document.querySelector('nav');
-        if (navContainer) {
-            navContainer.parentElement.insertBefore(container, navContainer);
-        }
-    }
+    if (document.getElementById('smart-search')) return;
+    if (document.getElementById('smart-search-input')) return;
+    const container = smartSearch.initializeWidget(products);
+    const nav = document.querySelector('.nav-container') || document.querySelector('nav');
+    if (nav) nav.appendChild(container);
 }
 
-// ============================================
-// PRODUCT RECOMMENDATIONS
-// ============================================
 function loadProductRecommendations(productId) {
     const recommendations = aiEngine.generateRecommendations(productId, products, cart);
     const container = document.getElementById('recommendations-container');
-    if (container) {
+    if (container && typeof recommendationWidget !== 'undefined') {
         recommendationWidget.renderRecommendations(recommendations, 'recommendations-container');
+    }
+    const grid = document.getElementById('recommendations-grid');
+    if (grid && recommendations.length) {
+        grid.innerHTML = recommendations.slice(0, 4).map(p => `
+            <div class="recommendation-card cursor-pointer" onclick="openProductModal('${p.id}')">
+                <img src="${p.image}" alt="${p.name}" class="w-full h-32 object-cover rounded-xl mb-2" onerror="this.src='resources/product-urban-oat.jpg'">
+                <h4 class="font-medium text-charcoal">${p.name}</h4>
+                <span class="text-sage font-semibold">$${p.salePrice != null ? p.salePrice : p.price}</span>
+            </div>
+        `).join('');
+        document.getElementById('recommendations-section')?.classList.remove('hidden');
     }
 }
 
-function initializeRecommendationsSection() {
-    const section = document.createElement('section');
-    section.className = 'recommendations-section';
-    section.innerHTML = `
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">Recommended For You</h2>
-            </div>
-            <div id="recommendations-container" class="products-grid"></div>
-        </div>
-    `;
-    return section;
-}
-
-// ============================================
-// PRODUCT DETAIL PAGE ENHANCEMENTS
-// ============================================
 function enhanceProductDetail(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
     aiEngine.recordProductView(productId);
 
-    // Add sentiment analysis
     const sentimentContainer = document.getElementById('product-sentiment');
-    if (sentimentContainer && product.reviews) {
+    if (sentimentContainer && product.reviews && typeof sentimentWidget !== 'undefined') {
         sentimentContainer.innerHTML = sentimentWidget.generateSentimentSummary(product);
     }
 
-    // Add sustainability score
     const sustainabilityContainer = document.getElementById('product-sustainability');
-    if (sustainabilityContainer) {
+    if (sustainabilityContainer && typeof sustainabilityWidget !== 'undefined') {
         sustainabilityContainer.innerHTML = sustainabilityWidget.generateSustainabilityBadge(product);
     }
 
-    // Add inventory alert
     const inventoryContainer = document.getElementById('product-inventory-alert');
-    if (inventoryContainer) {
+    if (inventoryContainer && typeof inventoryAlertWidget !== 'undefined') {
         inventoryContainer.innerHTML = inventoryAlertWidget.generateInventoryAlert(product);
     }
 
-    // Add style bundle
     const bundleContainer = document.getElementById('product-style-bundle');
-    if (bundleContainer) {
+    if (bundleContainer && typeof styleAdvisorWidget !== 'undefined') {
         const bundle = aiEngine.generateStyleBundle(productId, products);
         if (bundle.length > 0) {
             bundleContainer.innerHTML = styleAdvisorWidget.generateStyleBundle(bundle);
         }
     }
 
-    // Add similar products (visual search)
     const similarContainer = document.getElementById('product-similar');
     if (similarContainer) {
         const similar = aiEngine.findSimilarByVisualFeatures(productId, products);
         if (similar.length > 0) {
             similarContainer.innerHTML = `
-                <div class="container">
-                    <h3 class="section-title">Similar Products</h3>
-                    <div class="products-grid">
-                        ${similar.slice(0, 4).map(product => `
-                            <article class="product-card" data-product-id="${product.id}">
-                                <div class="product-image-container">
-                                    <img src="${product.image}" alt="${product.name}" />
-                                </div>
-                                <div class="product-content">
-                                    <h3 class="product-name">${product.name}</h3>
-                                    <span class="product-price">$${product.price}</span>
-                                </div>
-                            </article>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
+                <h4 class="font-semibold text-charcoal mb-3">Similar Products</h4>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    ${similar.slice(0, 4).map(p => `
+                        <article class="cursor-pointer" data-product-id="${p.id}" onclick="openProductModal('${p.id}')">
+                            <img src="${p.image}" alt="${p.name}" class="w-full h-24 object-cover rounded-lg mb-2" onerror="this.src='resources/product-urban-oat.jpg'">
+                            <p class="text-sm font-medium text-charcoal">${p.name}</p>
+                            <p class="text-sm text-sage">$${p.price}</p>
+                        </article>
+                    `).join('')}
+                </div>`;
         }
     }
 
-    // Load recommendations
+    const pricingContainer = document.getElementById('product-dynamic-pricing');
+    if (pricingContainer) {
+        const pricing = aiEngine.optimizePricing(product);
+        pricingContainer.innerHTML = `
+            <div class="p-3 bg-sage/10 rounded-xl text-sm">
+                <strong>AI Optimized Price:</strong> $${pricing.optimizedPrice}
+                ${pricing.originalPrice !== pricing.optimizedPrice ? `<span class="line-through text-charcoal/50 ml-2">$${pricing.originalPrice}</span>` : ''}
+            </div>`;
+    }
+
     loadProductRecommendations(productId);
 }
 
-// ============================================
-// HOMEPAGE ENHANCEMENTS
-// ============================================
 function enhanceHomepage() {
-    // Add personalized recommendations section on homepage
     const heroSection = document.querySelector('.hero');
-    if (heroSection) {
-        // Get most recently viewed categories
-        const recommendedProducts = products.filter(p => 
-            aiEngine.userProfile.viewedCategories.includes(p.category)
-        ).slice(0, 4);
+    if (!heroSection || document.getElementById('personalized-products-section')) return;
 
-        if (recommendedProducts.length > 0) {
-            const section = document.createElement('section');
-            section.className = 'personalized-recommendations';
-            section.style.cssText = `
-                padding: var(--space-32) 0;
-                background: var(--color-cream);
-            `;
-            section.innerHTML = `
-                <div class="container">
-                    <div class="section-header">
-                        <h2 class="section-title">Your Personalized Picks</h2>
-                        <p class="section-description">Based on your browsing history</p>
-                    </div>
-                    <div id="personalized-products" class="products-grid"></div>
-                </div>
-            `;
-            heroSection.parentElement.insertBefore(section, heroSection.nextElementSibling);
-            recommendationWidget.renderRecommendations(recommendedProducts, 'personalized-products');
-        }
+    const viewed = aiEngine.userProfile.viewedCategories || [];
+    let recommendedProducts = viewed.length
+        ? products.filter(p => viewed.includes(p.category)).slice(0, 4)
+        : products.filter(p => p.tags && p.tags.includes('bestseller')).slice(0, 4);
+    if (recommendedProducts.length < 4) recommendedProducts = products.slice(0, 4);
+
+    const section = document.createElement('section');
+    section.id = 'personalized-products-section';
+    section.className = 'personalized-recommendations';
+    section.style.cssText = 'padding: var(--space-32) 0; background: var(--color-cream);';
+    section.innerHTML = `
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Recommended For You</h2>
+                <p class="section-description">Powered by WoolFlow AI</p>
+            </div>
+            <div id="personalized-products" class="products-grid"></div>
+        </div>`;
+    const anchor = document.querySelector('.products-section') || heroSection;
+    anchor.parentElement.insertBefore(section, anchor.nextSibling);
+    if (typeof recommendationWidget !== 'undefined') {
+        recommendationWidget.renderRecommendations(recommendedProducts, 'personalized-products');
     }
 }
 
-// ============================================
-// PRODUCTS PAGE ENHANCEMENTS
-// ============================================
 function enhanceProductsPage() {
-    // Add size fit advisor button
-    const filterSection = document.querySelector('.filter-section') || document.querySelector('[class*="filter"]');
-    if (filterSection) {
+    const filterSection = document.querySelector('aside') || document.querySelector('.filter-section');
+    if (filterSection && !filterSection.querySelector('.size-fit-btn')) {
         const button = document.createElement('button');
-        button.className = 'size-fit-btn';
-        button.innerHTML = `
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16h.01M12 16h.01M16 16h.01M9 7h6m0 0V5a2 2 0 00-2-2h-2a2 2 0 00-2 2v2m0 0H7a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V9a2 2 0 00-2-2h-1z"/>
-            </svg>
-            Size Finder
-        `;
+        button.type = 'button';
+        button.className = 'size-fit-btn w-full mb-4';
+        button.innerHTML = '&#128207; Size Finder (AI)';
         button.onclick = openSizeFitAdvisor;
-        button.style.cssText = `
-            padding: var(--space-3) var(--space-4);
-            background: var(--color-sage);
-            color: white;
-            border: none;
-            border-radius: var(--radius-lg);
-            cursor: pointer;
-            font-weight: 600;
-            font-size: var(--text-sm);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: var(--space-4);
-            transition: background var(--transition-fast);
-        `;
+        button.style.cssText = 'padding:12px;background:var(--color-sage);color:#fff;border:none;border-radius:12px;font-weight:600;cursor:pointer';
         filterSection.insertBefore(button, filterSection.firstChild);
     }
 
-    // Add dynamic pricing info tooltip for premium items
-    const premiumProducts = document.querySelectorAll('[data-product-id]');
-    premiumProducts.forEach(card => {
+    document.querySelectorAll('article[data-product-id], .product-card[data-product-id]').forEach(card => {
         const productId = card.getAttribute('data-product-id');
         const product = products.find(p => p.id === productId);
-        if (product && product.price > 160) {
-            const pricing = aiEngine.optimizePricing(product);
-            if (pricing.discountPercent !== 0) {
-                const badge = document.createElement('span');
-                badge.className = 'pricing-optimization-badge';
-                badge.textContent = pricing.discountPercent > 0 ? `Save ${Math.abs(pricing.discountPercent)}%` : 'Optimized Price';
-                badge.style.cssText = `
-                    position: absolute;
-                    top: 10px;
-                    right: 10px;
-                    background: #4CAF50;
-                    color: white;
-                    padding: 4px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 600;
-                `;
-                card.querySelector('.product-image-container')?.appendChild(badge);
-            }
+        if (!product) return;
+        const pricing = aiEngine.optimizePricing(product);
+        if (product.price > 140 && !card.querySelector('.pricing-optimization-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'pricing-optimization-badge';
+            badge.textContent = pricing.discountPercent ? `Save ${Math.abs(pricing.discountPercent)}%` : 'AI Price';
+            badge.style.cssText = 'position:absolute;top:10px;right:10px;background:#4CAF50;color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:600;z-index:5';
+            (card.querySelector('.product-image-container') || card.querySelector('.relative') || card).appendChild(badge);
         }
     });
 }
 
-// ============================================
-// PRODUCT CARDS ENHANCEMENT
-// ============================================
 function enhanceProductCard(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
 
-    const card = document.querySelector(`[data-product-id="${productId}"]`);
+    const card = document.querySelector(`article[data-product-id="${productId}"], .product-card[data-product-id="${productId}"]`);
     if (!card) return;
 
-    // Add inventory alert badge
-    const prediction = aiEngine.predictOutOfStock(product);
-    if (prediction.alert) {
-        const badge = document.createElement('span');
-        badge.className = `inventory-badge inventory-badge-${prediction.urgency}`;
-        badge.textContent = prediction.alert;
-        badge.style.cssText = `
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: ${prediction.urgency === 'critical' ? '#EF4444' : '#F59E0B'};
-            color: white;
-            padding: 6px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: 600;
-            z-index: 10;
-        `;
-        card.querySelector('.product-image-container')?.appendChild(badge);
-    }
+    const imgWrap = card.querySelector('.product-image-container') || card.querySelector('.relative') || card;
 
-    // Add sentiment badge if reviews exist
-    if (product.reviews && product.reviews.length > 0) {
-        const summary = aiEngine.summarizeProductReviews(product.reviews);
-        const sentiment = summary.averageSentiment;
-        const emoji = sentiment > 0.5 ? '😊' : sentiment > 0 ? '🙂' : '😐';
-        
-        const sentimentBadge = document.createElement('span');
-        sentimentBadge.className = 'sentiment-badge';
-        sentimentBadge.innerHTML = `${emoji} ${summary.positiveCount}/${summary.reviewCount}`;
-        sentimentBadge.style.cssText = `
-            position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: white;
-            padding: 6px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        `;
-        card.querySelector('.product-image-container')?.appendChild(sentimentBadge);
-    }
-}
-
-// ============================================
-// CART PAGE ENHANCEMENTS
-// ============================================
-function enhanceCartPage() {
-    // Add churn prevention recommendations
-    const cartContainer = document.querySelector('[id*="cart"]');
-    if (cartContainer) {
-        // Predict at-risk behavior
-        const userActivity = {
-            lastPurchaseDate: parseInt(localStorage.getItem('woolflow-last-purchase')) || Date.now() - 180 * 24 * 60 * 60 * 1000,
-            lastVisitDate: Date.now(),
-            abandonedCartItems: cart.length,
-            emailOpenRate: 0.3
-        };
-
-        const churnPrediction = aiEngine.predictChurnRisk(userActivity);
-        if (churnPrediction.riskLevel === 'high') {
-            const retentionOffer = document.createElement('div');
-            retentionOffer.className = 'retention-offer';
-            retentionOffer.style.cssText = `
-                background: linear-gradient(135deg, var(--color-sage), var(--color-sage-dark));
-                color: white;
-                padding: var(--space-6);
-                border-radius: var(--radius-lg);
-                margin-bottom: var(--space-6);
-                text-align: center;
-            `;
-            retentionOffer.innerHTML = `
-                <h3>Special Offer Just For You! 🎁</h3>
-                <p>Complete your purchase with 15% off today</p>
-                <code style="background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px;">COMEBACK15</code>
-            `;
-            cartContainer.prepend(retentionOffer);
+    if (!card.querySelector('.inventory-badge')) {
+        const prediction = aiEngine.predictOutOfStock(product);
+        if (prediction.alert) {
+            const badge = document.createElement('span');
+            badge.className = `inventory-badge inventory-badge-${prediction.urgency}`;
+            badge.textContent = prediction.alert;
+            badge.style.cssText = `position:absolute;top:10px;left:10px;background:${prediction.urgency === 'critical' ? '#EF4444' : '#F59E0B'};color:#fff;padding:6px 10px;border-radius:4px;font-size:11px;font-weight:600;z-index:10`;
+            imgWrap.style.position = 'relative';
+            imgWrap.appendChild(badge);
         }
     }
-}
 
-// ============================================
-// ANALYTICS TRACKING
-// ============================================
-function trackAIInteraction(featureType, productId, action) {
-    aiEngine.trackInteraction(featureType, productId, {
-        action,
-        timestamp: Date.now()
-    });
+    if (product.reviews && product.reviews.length && !card.querySelector('.sentiment-badge')) {
+        const summary = aiEngine.summarizeProductReviews(product.reviews);
+        const emoji = summary.averageSentiment > 0.5 ? '😊' : summary.averageSentiment > 0 ? '🙂' : '😐';
+        const sentimentBadge = document.createElement('span');
+        sentimentBadge.className = 'sentiment-badge';
+        sentimentBadge.textContent = `${emoji} ${summary.positiveCount}/${summary.reviewCount}`;
+        sentimentBadge.style.cssText = 'position:absolute;bottom:10px;right:10px;background:#fff;padding:4px 8px;border-radius:20px;font-size:11px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,0.1);z-index:10';
+        imgWrap.appendChild(sentimentBadge);
+    }
 
-    // Send to analytics endpoint (in production)
-    if (ANALYTICS_CONFIG.trackingEnabled) {
-        console.log(`[AI Analytics] ${featureType}: ${action} - Product: ${productId}`);
+    if (!card.querySelector('.compare-card-btn')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'compare-card-btn';
+        btn.title = 'Compare';
+        btn.textContent = '⇄';
+        btn.style.cssText = 'position:absolute;bottom:10px;left:10px;width:28px;height:28px;border-radius:50%;background:#fff;border:1px solid #ddd;cursor:pointer;z-index:10';
+        btn.onclick = (e) => { e.stopPropagation(); toggleCompare(productId); };
+        imgWrap.appendChild(btn);
     }
 }
 
-// ============================================
-// INITIALIZATION FUNCTION
-// ============================================
+function enhanceCartPage() {
+    if (document.querySelector('.retention-offer')) return;
+
+    const userActivity = {
+        lastPurchaseDate: parseInt(localStorage.getItem('woolflow-last-purchase')) || Date.now() - 180 * 24 * 60 * 60 * 1000,
+        lastVisitDate: Date.now(),
+        abandonedCartItems: cart.length,
+        emailOpenRate: 0.3
+    };
+
+    const churnPrediction = aiEngine.predictChurnRisk(userActivity);
+    const target = document.getElementById('cart-items-list')?.parentElement || document.querySelector('main');
+    if (!target) return;
+
+    if (churnPrediction.riskLevel === 'high' || cart.length > 0) {
+        const retentionOffer = document.createElement('div');
+        retentionOffer.className = 'retention-offer';
+        retentionOffer.style.cssText = 'background:linear-gradient(135deg,#9BA894,#7a8a72);color:#fff;padding:1.5rem;border-radius:12px;margin-bottom:1.5rem;text-align:center';
+        retentionOffer.innerHTML = `
+            <h3 class="font-bold mb-2">${churnPrediction.riskLevel === 'high' ? 'We miss you! 🎁' : 'Complete your order'}</h3>
+            <p class="mb-2 text-sm opacity-90">Use code <code class="bg-white/20 px-2 py-1 rounded">COMEBACK15</code> for 15% off</p>
+            <button type="button" onclick="document.getElementById('discount-code').value='comeback15'; applyDiscount();" class="mt-2 px-4 py-2 bg-white text-charcoal rounded-full text-sm font-medium">Apply Offer</button>`;
+        target.insertBefore(retentionOffer, target.firstChild);
+    }
+}
+
+function trackAIInteraction(featureType, productId, action) {
+    aiEngine.trackInteraction(featureType, productId, { action, timestamp: Date.now() });
+    if (typeof ANALYTICS_CONFIG !== 'undefined' && ANALYTICS_CONFIG.trackingEnabled) {
+        console.log(`[AI Analytics] ${featureType}: ${action}`);
+    }
+}
+
 function initializeAIFeatures() {
     console.log('🤖 Initializing WoolFlow AI Features...');
 
-    // Initialize all AI features
     initializeSmartSearch();
     enhanceHomepage();
 
-    // Enhance all product cards
-    const productCards = document.querySelectorAll('[data-product-id]');
-    productCards.forEach(card => {
+    if (window.location.pathname.includes('products.html')) {
+        enhanceProductsPage();
+    }
+    if (window.location.pathname.includes('cart.html')) {
+        enhanceCartPage();
+    }
+
+    document.querySelectorAll('article[data-product-id], .product-card[data-product-id]').forEach(card => {
         const productId = card.getAttribute('data-product-id');
         enhanceProductCard(productId);
-
-        // Add click listeners for recommendation tracking
-        card.addEventListener('click', () => {
-            aiEngine.recordProductView(productId);
-        });
+        card.addEventListener('click', () => aiEngine.recordProductView(productId));
     });
 
-    // Add size fit advisor button to navigation
     const navActionsContainer = document.querySelector('.nav-actions');
-    if (navActionsContainer) {
+    if (navActionsContainer && !navActionsContainer.querySelector('.size-fit-nav-btn')) {
         const sizeBtn = document.createElement('button');
+        sizeBtn.type = 'button';
         sizeBtn.className = 'size-fit-nav-btn';
-        sizeBtn.innerHTML = `
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-            </svg>
-        `;
         sizeBtn.title = 'Find Your Size';
+        sizeBtn.innerHTML = '<svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>';
         sizeBtn.onclick = openSizeFitAdvisor;
-        sizeBtn.style.cssText = `
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--color-charcoal);
-            transition: color var(--transition-fast);
-        `;
-        sizeBtn.addEventListener('mouseover', () => sizeBtn.style.color = 'var(--color-sage)');
-        sizeBtn.addEventListener('mouseout', () => sizeBtn.style.color = 'var(--color-charcoal)');
+        sizeBtn.style.cssText = 'background:none;border:none;cursor:pointer;padding:8px;color:var(--color-charcoal)';
         navActionsContainer.insertBefore(sizeBtn, navActionsContainer.firstChild);
     }
 
-    console.log('✅ AI Features initialized successfully');
+    console.log('✅ AI Features initialized');
 }
 
-// Initialize when DOM is ready
+function refreshAIFeatures() {
+    document.querySelectorAll('article[data-product-id], .product-card[data-product-id]').forEach(card => {
+        enhanceProductCard(card.getAttribute('data-product-id'));
+    });
+}
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeAIFeatures);
+    document.addEventListener('DOMContentLoaded', () => setTimeout(initializeAIFeatures, 300));
 } else {
-    initializeAIFeatures();
+    setTimeout(initializeAIFeatures, 300);
 }
 
-// Track cart additions for recommendations
 const originalAddToCart = window.addToCart;
-window.addToCart = function(productId, name, price, image) {
+window.addToCart = function (productId, name, price, image, size) {
     trackAIInteraction('add_to_cart', productId, 'added');
-    if (originalAddToCart) originalAddToCart(productId, name, price, image);
+    if (originalAddToCart) return originalAddToCart(productId, name, price, image, size);
 };
 
-// Periodic update of user profile
-setInterval(() => {
-    aiEngine.saveUserProfile();
-}, 60000); // Every minute
+setInterval(() => { if (typeof aiEngine !== 'undefined') aiEngine.saveUserProfile(); }, 60000);

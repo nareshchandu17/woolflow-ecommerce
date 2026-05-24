@@ -1,0 +1,17 @@
+{
+  "name": "WoolFlow",
+  "short_name": "WoolFlow",
+  "description": "Premium sustainable wool sneakers e-commerce",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#FAF8F4",
+  "theme_color": "#9BA894",
+  "icons": [
+    {
+      "src": "resources/product-urban-oat.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}

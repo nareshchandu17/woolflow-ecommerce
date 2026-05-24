@@ -329,8 +329,14 @@ class WoolFlowAI {
     // 6. INVENTORY & DEMAND PREDICTION
     // ============================================
     predictOutOfStock(product) {
-        const totalStock = Object.values(product.stockBySize || {})
-            .reduce((sum, sizeStock) => sum + Object.values(sizeStock).reduce((a, b) => a + b, 0), 0);
+        const totalStock = Object.values(product.stockBySize || {}).reduce((sum, val) => {
+            if (typeof val === 'number') {
+                return sum + val;
+            } else if (typeof val === 'object' && val !== null) {
+                return sum + Object.values(val).reduce((a, b) => a + (typeof b === 'number' ? b : 0), 0);
+            }
+            return sum;
+        }, 0);
 
         const stockLevel = totalStock / (product.variants.length * 6);
         const daysToStockout = stockLevel * 5; // Estimated based on sales velocity

@@ -1076,7 +1076,4 @@ const productsDatabase = [
     }
 ];
 
-// Load products into global variable
-let products = [...productsDatabase];
-
-console.log(`✅ Loaded ${products.length} products from database`);
+// Catalog count logged after normalization in catalog-utils.js

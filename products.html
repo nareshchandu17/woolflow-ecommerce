@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@splidejs/splide@4.1.4/dist/js/splide.min.js"></script>
     <link rel="stylesheet" href="styles.css?v=1.1.4">
+    <link rel="manifest" href="manifest.json">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -192,6 +193,10 @@
                                 <label class="flex items-center">
                                     <input type="checkbox" class="filter-checkbox hidden" value="casual" onchange="applyFilters()">
                                     <span class="filter-label px-3 py-2 rounded-full border border-mist-grey text-sm cursor-pointer transition-all">Casual</span>
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="checkbox" class="filter-checkbox hidden" value="winter" onchange="applyFilters()">
+                                    <span class="filter-label px-3 py-2 rounded-full border border-mist-grey text-sm cursor-pointer transition-all">Winter</span>
                                 </label>
                             </div>
                         </div>
@@ -416,7 +421,7 @@
             <div class="p-6">
                 <div class="grid md:grid-cols-2 gap-8">
                     <div>
-                        <img id="modal-image" src="" alt="" class="w-full h-80 object-cover rounded-xl mb-4">
+                        <img id="modal-image" alt="" class="w-full h-80 object-cover rounded-xl mb-4" style="display:none">
                         <div class="grid grid-cols-4 gap-2">
                             <img src="resources/product-urban-oat.jpg" alt="View 1" class="w-full h-20 object-cover rounded-lg cursor-pointer opacity-60 hover:opacity-100">
                             <img src="resources/product-urban-sage.jpg" alt="View 2" class="w-full h-20 object-cover rounded-lg cursor-pointer opacity-60 hover:opacity-100">
@@ -477,11 +482,17 @@
                             </ul>
                         </div>
                         
+                        <div id="product-inventory-alert" class="mb-4"></div>
+                        <div id="product-dynamic-pricing" class="mb-4"></div>
+                        <div id="product-sentiment" class="mb-4"></div>
+                        <div id="product-sustainability" class="mb-4"></div>
+                        <div id="product-style-bundle" class="mb-4"></div>
                         <button id="modal-add-to-cart" class="w-full py-3 bg-charcoal text-warm-white rounded-full hover:bg-charcoal/90 transition-all font-medium">
                             Add to Cart
                         </button>
                         
                         <!-- Reviews Section -->
+                        <div id="product-similar" class="mt-6"></div>
                         <div id="modal-reviews"></div>
                     </div>
                 </div>
@@ -526,6 +537,8 @@
 
     <!-- Products Database -->
     <script src="products-database.js"></script>
+    <script src="catalog-utils.js"></script>
+    <script src="app-bootstrap.js"></script>
 
     <!-- AI Engine Scripts -->
     <script src="ai-engine.js"></script>

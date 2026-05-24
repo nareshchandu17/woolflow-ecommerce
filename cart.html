@@ -34,6 +34,7 @@
         }
     </script>
     <link rel="stylesheet" href="styles.css?v=1.1.4">
+    <link rel="manifest" href="manifest.json">
     
     <style>
         body {
@@ -202,6 +203,10 @@
                             <div class="flex items-center justify-between">
                                 <span class="text-charcoal/70">Shipping</span>
                                 <span class="text-charcoal">Free</span>
+                            </div>
+                            <div id="cart-discount-row" class="flex items-center justify-between hidden">
+                                <span class="text-charcoal/70">Discount</span>
+                                <span id="summary-discount" class="text-green-600">-$0.00</span>
                             </div>
                             <div class="flex items-center justify-between">
                                 <span class="text-charcoal/70">Tax</span>
@@ -374,6 +379,8 @@
 
     <!-- Products Database -->
     <script src="products-database.js"></script>
+    <script src="catalog-utils.js"></script>
+    <script src="app-bootstrap.js"></script>
 
     <!-- AI Engine Scripts -->
     <script src="ai-engine.js"></script>

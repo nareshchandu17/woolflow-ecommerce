@@ -32,6 +32,7 @@
         }
     </script>
     <link rel="stylesheet" href="styles.css?v=1.1.4">
+    <link rel="manifest" href="manifest.json">
     
     <style>
         body {
@@ -361,13 +362,16 @@
         </div>
     </div>
 
+    <script src="products-database.js"></script>
+    <script src="catalog-utils.js"></script>
+    <script src="app-bootstrap.js"></script>
     <script src="main.js?v=1.1.4"></script>
     <script>
         let promoDiscount = 0;
         
         // Initialize checkout page
         document.addEventListener('DOMContentLoaded', function() {
-            products = [...productData];
+            products = typeof WoolFlowCatalog !== 'undefined' ? WoolFlowCatalog.loadProductCatalog() : [...productData];
             renderCheckoutCart();
             calculateTotals();
             
@@ -407,14 +411,23 @@
         }
         
         function calculateTotals() {
+            if (typeof calculateCartTotals === 'function') {
+                const calc = calculateCartTotals();
+                document.getElementById('subtotal').textContent = `$${calc.subtotal.toFixed(2)}`;
+                document.getElementById('tax').textContent = `$${calc.tax.toFixed(2)}`;
+                document.getElementById('total').textContent = `$${calc.total.toFixed(2)}`;
+                if (calc.discount > 0) {
+                    document.getElementById('discount').textContent = `-$${calc.discount.toFixed(2)}`;
+                    document.getElementById('discount-row').classList.remove('hidden');
+                }
+                return;
+            }
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-            const tax = subtotal * 0.08;
-            const total = subtotal + tax - promoDiscount;
-            
+            const tax = (subtotal - promoDiscount) * 0.08;
+            const total = subtotal - promoDiscount + tax;
             document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
             document.getElementById('tax').textContent = `$${tax.toFixed(2)}`;
             document.getElementById('total').textContent = `$${total.toFixed(2)}`;
-            
             if (promoDiscount > 0) {
                 document.getElementById('discount').textContent = `-$${promoDiscount.toFixed(2)}`;
                 document.getElementById('discount-row').classList.remove('hidden');
@@ -426,10 +439,14 @@
             const message = document.getElementById('promo-message');
             
             const promoCodes = {
-                'WOOL20': 20,
-                'SAGE15': 15,
-                'FIRST10': 10,
-                'FREESHIP': 0
+                'WOOL20': 0.20,
+                'SAGE15': 0.15,
+                'FIRST10': 0.10,
+                'WOOL10': 0.10,
+                'FIRST15': 0.15,
+                'NATURAL20': 0.20,
+                'COMEBACK15': 0.15,
+                'FREESHIP': -1
             };
             
             if (promoCodes[code] !== undefined) {
@@ -438,8 +455,10 @@
                     document.getElementById('shipping').textContent = 'Free';
                     message.textContent = 'Free shipping applied!';
                 } else {
-                    promoDiscount = (subtotal * promoCodes[code]) / 100;
-                    message.textContent = `${promoCodes[code]}% discount applied!`;
+                    const rate = promoCodes[code];
+                    promoDiscount = subtotal * rate;
+                    if (typeof setCartDiscount === 'function') setCartDiscount(rate, code.toLowerCase());
+                    message.textContent = `${Math.round(rate * 100)}% discount applied!`;
                 }
                 message.className = 'text-sm mt-2 text-green-600';
                 message.classList.remove('hidden');
@@ -463,42 +482,23 @@
         }
         
         function placeOrder() {
-            // Validate form
             const requiredFields = ['firstName', 'lastName', 'email', 'address', 'city', 'state', 'zip'];
             let isValid = true;
-            
             requiredFields.forEach(field => {
                 const input = document.getElementById(field);
-                if (!input.value.trim()) {
-                    isValid = false;
-                    input.classList.add('border-red-500');
-                } else {
-                    input.classList.remove('border-red-500');
-                }
+                if (!input.value.trim()) { isValid = false; input.classList.add('border-red-500'); }
+                else input.classList.remove('border-red-500');
             });
-            
-            if (!isValid) {
-                showNotification('Please fill in all required fields', 'error');
-                return;
-            }
-            
-            if (cart.length === 0) {
-                showNotification('Your cart is empty', 'error');
-                return;
-            }
-            
-            // Generate order number
-            const orderNumber = '#WF-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
+            if (!isValid) { showNotification('Please fill in all required fields', 'error'); return; }
+            if (cart.length === 0) { showNotification('Your cart is empty', 'error'); return; }
+            const order = typeof completeOrder === 'function' ? completeOrder({ paymentMethod: 'card' }) : null;
+            const orderNumber = order ? '#' + order.id : '#WF-' + Date.now();
             document.getElementById('order-number').textContent = orderNumber;
-            
-            // Show success modal
             const modal = document.getElementById('success-modal');
             modal.classList.remove('opacity-0', 'invisible');
             modal.querySelector('div').classList.remove('scale-95');
-            
-            // Clear cart
-            cart = [];
-            localStorage.setItem('woolflow-cart', JSON.stringify(cart));
+            renderCheckoutCart();
+            calculateTotals();
         }
         
         // Card number formatting
